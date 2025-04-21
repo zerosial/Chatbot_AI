@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { useState, useEffect } from "react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  sources?: string[];
 }
 
 export default function Chat() {
@@ -14,35 +13,57 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const chat = new ChatOpenAI({
-    openAIApiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-    temperature: 0.7,
-  });
+  useEffect(() => {
+    // 컴포넌트가 마운트된 후에 초기 메시지 설정
+    setMessages([
+      {
+        role: "assistant",
+        content: "안녕하세요! 무엇을 도와드릴까요?",
+      },
+    ]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const newMessages = [...messages, { role: "user", content: input }];
-    setMessages(newMessages);
+    const userMessage = { role: "user" as const, content: input };
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await chat.invoke([
-        ...newMessages.map((msg) =>
-          msg.role === "user"
-            ? new HumanMessage(msg.content)
-            : new AIMessage(msg.content)
-        ),
-      ]);
+      const response = await fetch("/api/knowledge", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question: input }),
+      });
 
-      setMessages([
-        ...newMessages,
-        { role: "assistant", content: response.content },
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.response,
+          sources: data.sources,
+        },
       ]);
     } catch (error) {
       console.error("Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "죄송합니다. 오류가 발생했습니다.",
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +76,8 @@ export default function Chat() {
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
+              className={`flex flex-col ${
+                message.role === "user" ? "items-end" : "items-start"
               }`}
             >
               <div
@@ -73,7 +94,7 @@ export default function Chat() {
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-gray-700 text-gray-100 rounded-lg p-3">
-                입력 중...
+                답변 생성 중...
               </div>
             </div>
           )}
@@ -84,12 +105,12 @@ export default function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="flex-1 rounded-lg bg-gray-800 text-gray-100 border border-gray-600 p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-400"
-            placeholder="메시지를 입력하세요..."
+            placeholder="질문을 입력하세요..."
           />
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg disabled:bg-indigo-400 hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg disabled:bg-indigo-400 hover:bg-indigo-700 transition-colors duration-200"
           >
             전송
           </button>
