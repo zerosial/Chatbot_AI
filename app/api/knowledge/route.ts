@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
     // ChatGPT를 사용하여 응답 생성
     const chat = new ChatOpenAI({
-      modelName: "gpt-3.5-turbo",
+      modelName: "gpt-4o-mini",
       temperature: 0.7,
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
