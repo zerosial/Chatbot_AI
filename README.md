@@ -1,4 +1,5 @@
 # LangChain을 활용한 기업 내부 지식 베이스 챗봇
+![chatai](https://github.com/user-attachments/assets/5b5e587b-e739-4e03-a6f1-f7f35bf663e7)
 
 기업의 내부 문서와 지식을 효율적으로 관리하고 검색할 수 있는 AI 기반 챗봇 시스템입니다. LangChain과 Next.js를 활용하여 구축된 이 시스템은 사용자 친화적인 인터페이스와 강력한 검색 기능을 제공합니다.
 
